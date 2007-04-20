@@ -13,7 +13,7 @@
 
 class TBigNumber : public TGFFreeable {
 protected:
-   unsigned short int *FArrayI;
+   unsigned int *FArrayI;
 
    bool FNegative;
    

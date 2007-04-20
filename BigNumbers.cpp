@@ -15,17 +15,17 @@ void TBigNumber::ClearArrayI() {
 }
 
 void TBigNumber::ResizeArrayI( unsigned int iSize, bool bResizeMem ) {
-   unsigned short int *TmpArrayI;
+   unsigned  int *TmpArrayI;
    unsigned int oversize = 0x80000000;
 
    if ((iSize & oversize) != 0) {
       throw new std::exception();
    }
 
-   unsigned int iAllocSize = iSize << 1;
+   unsigned int iAllocSize = iSize << 2;
 
    if ( bResizeMem || ( iAllocSize > iSizeArrayI ) ) {
-      TmpArrayI = static_cast<short unsigned int *>( malloc( iAllocSize ) );
+      TmpArrayI = static_cast<unsigned int *>( malloc( iAllocSize ) );
 
       // init met nullen
       memset( TmpArrayI, 0, iAllocSize );
@@ -114,6 +114,9 @@ void TBigNumber::AssignValue( int iNumber ) {
       iTmp = iNumber;
    }
    
+   this->ResizeArrayI( 1, false );
+   this->FArrayI[0] = iTmp;
+/*
    unsigned int hi = (iTmp & 0xFFFF0000);
    if ( hi != 0 ) {
       this->ResizeArrayI( 2, false );
@@ -123,6 +126,7 @@ void TBigNumber::AssignValue( int iNumber ) {
       this->ResizeArrayI( 1, false );
       this->FArrayI[0] = static_cast<unsigned short int>(iTmp & 0x0000FFFF);
    }
+*/
 }
 
 void TBigNumber::AssignUnsigned( unsigned int iNumber ) {
@@ -130,6 +134,9 @@ void TBigNumber::AssignUnsigned( unsigned int iNumber ) {
       ClearArrayI();
    }
 
+   this->ResizeArrayI( 1, false );
+   this->FArrayI[0] = iNumber;
+/*
    unsigned int hi = (iNumber & 0xFFFF0000);
    if ( hi != 0 ) {
       this->ResizeArrayI( 2, false );
@@ -139,6 +146,7 @@ void TBigNumber::AssignUnsigned( unsigned int iNumber ) {
       this->ResizeArrayI( 1, false );
       this->FArrayI[0] = static_cast<unsigned short int>(iNumber & 0x0000FFFF);
    }
+*/
 }
 
 void TBigNumber::AssignValue( const TBigNumber *aNumber ) {
@@ -146,7 +154,7 @@ void TBigNumber::AssignValue( const TBigNumber *aNumber ) {
       if ( this->iSizeArrayI < aNumber->iSizeArrayI ) {
          free( FArrayI );
          
-         FArrayI = static_cast<short unsigned int *>( malloc( aNumber->iSizeArrayI ) );
+         FArrayI = static_cast<unsigned int *>( malloc( aNumber->iSizeArrayI ) );
       } else {
          ClearArrayI();
       }
@@ -179,6 +187,8 @@ void TBigNumber::Add( const TBigNumber *aNumber ) {
 
    unsigned short int remA;
    unsigned int resA;
+   unsigned int ref;
+   unsigned char add = 0;
    unsigned int resB = 0;
 
    unsigned int i;
@@ -189,12 +199,23 @@ void TBigNumber::Add( const TBigNumber *aNumber ) {
          remA = 0;
       }
 
-      resA = this->FArrayI[i] + remA + resB;
+      resA = this->FArrayI[i];
+      
+      ref = resA;
+      resA += remA;
+      if ( resA < ref ) {     // langzame overflow detectie
+         add++;
+      }
+      
+      ref = resA;
+      resA += resB;
+      if ( resA < ref ) {     // langzame overflow detectie
+         add++;                  // volgens mij kom je hier nooit...
+      }
 
-      remA = static_cast<unsigned short int>(resA & 0x0000FFFF);
-      resB = static_cast<unsigned short int>((resA & 0xFFFF0000) >> 16);
+      resB = add;
 
-      this->FArrayI[i] = remA;
+      this->FArrayI[i] = resA;
    }
    
    this->CompressArrayI();
@@ -209,7 +230,7 @@ void TBigNumber::Subtract( const TBigNumber *aNumber ) {
    unsigned int resA;
    unsigned int resB;
    unsigned int remC = 0;
-
+   
 
    // Note: werkt niet met negatieve mutaties
    
@@ -255,7 +276,6 @@ void TBigNumber::Subtract( const TBigNumber *aNumber ) {
       }
 
       resB = remA + remC;
-      
       resA = resA - resB;
 
       remA = static_cast<unsigned short int>(resA & 0x0000FFFF);
@@ -385,7 +405,7 @@ void TBigNumber::Inc() {
    bool b = false;
    
    if ( iCountArrayI > 0 ) {
-      b = ( FArrayI[0] < 0xFFFF );
+      b = ( FArrayI[0] < 0xFFFFFFFF );
    }
    
    if ( b ) {
@@ -487,7 +507,7 @@ void TBigNumber::Div2() {
       FArrayI[i] = FArrayI[i] >> 1;
 
       if (bOne && (i > 0)) {
-         FArrayI[i-1] = (FArrayI[i-1] | 0x8000);
+         FArrayI[i-1] = (FArrayI[i-1] | 0x80000000);
       }
    }
    
@@ -501,7 +521,7 @@ void TBigNumber::Mul2() {
 
    c = this->iCountArrayI;
    if (c != 0 ) {
-      bOne = ((FArrayI[c - 1] & 0x8000) != 0);
+      bOne = ((FArrayI[c - 1] & 0x80000000) != 0);
       
       if (bOne) {
          this->ResizeArrayI( c + 1, true );
@@ -515,11 +535,11 @@ void TBigNumber::Mul2() {
    }
 
    for ( i = c; i >= 0; i-- ) {
-      bOne = ((FArrayI[i] & 0x8000) != 0);
+      bOne = ((FArrayI[i] & 0x80000000) != 0);
 
       FArrayI[i] = FArrayI[i] << 1;
       if ( bOne ) {
-         FArrayI[i+1] = (FArrayI[i+1] | 0x0001);
+         FArrayI[i+1] = (FArrayI[i+1] | 0x00000001);
       }
 
       if ( i == 0 ) {
@@ -563,7 +583,7 @@ std::string TBigNumber::ToHexString()
    unsigned int d = c - 1;
 
    for ( i = 0; i < c; i++ ) {
-      sprintf( &tmp[0], "%04x", FArrayI[i] );
+      sprintf( &tmp[0], "%08x", FArrayI[i] );
       
       // NIET omgekeerd teruggeven
       sRes = sRes + tmp;

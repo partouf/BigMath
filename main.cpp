@@ -26,7 +26,7 @@ void testcase_optellingen()
    TBigNumber *c = new TBigNumber();
    TBigNumber *d = new TBigNumber();
 
-   for ( unsigned int i = 0x1234FFFF; i < 0x7FFFFFFF; i++ ) {
+   for ( unsigned int i = 0x0; i < 0x7FFFFFFF; i++ ) {
 
       // note: wie zegt dat Assign() werkt?
       //  --> ook testen, maar hoe?
@@ -406,6 +406,12 @@ int main(int argc, char *argv[])
    
    delete number;
 
+
+
+   testcase_optellingen();
+   
+   system("pause");
+   return 1;
 
 
    unsigned int iSize;
