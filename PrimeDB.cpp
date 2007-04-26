@@ -135,7 +135,7 @@ void TPrimeDB::LoadFromASCIIFile( const char *sFile ) {
       
       if ( strlen( sLine ) != 0 ) {
          aNum = new TBigNumber();
-         AddElement( aNum );
+         this->AddElement( aNum );
          
          aNum->LoadFromString( sLine );
       }
