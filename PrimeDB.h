@@ -4,7 +4,7 @@
 #define _PRIMEDB_H
 
 
-#include <Molecules/GFVector.h>
+#include <Groundfloor/Molecules/GFVector.h>
 #include "BigNumbers.h"
 
 // TPrimeDB klasse

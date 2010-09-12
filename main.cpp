@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-#include <Atoms/GFFreeable.h>
+#include <Groundfloor/Atoms/GFFreeable.h>
 #include "PrimeDB.h"
 
 
@@ -26,7 +26,7 @@ void testcase_optellingen()
    TBigNumber *c = new TBigNumber();
    TBigNumber *d = new TBigNumber();
 
-   for ( unsigned int i = 0x0; i < 0x7FFFFFFF; i++ ) {
+   for ( unsigned int i = 0x1; i < 0x7FFFFFFF; i++ ) {
 
       // note: wie zegt dat Assign() werkt?
       //  --> ook testen, maar hoe?
@@ -34,17 +34,24 @@ void testcase_optellingen()
 
       std::cout << "start: i = " << a->ToString() << endl;
 
-      for ( unsigned int j = 0xFFFE; j < 0x7FFFFFFF; j++ ) {
+      for ( unsigned int j = 0x00; j < 0x7FFFFFFF; j++ ) {
          cpuAnswer = i + j;
 
-         
          // lalala
          b->AssignUnsigned( j );
          
          // note2: wie zegt dat Add met integer werkt itt Add met TBigNumber* ?
 
          c->AssignValue( a );
+         
+         //c->Subtract( b );
+         //printf( "c = %s\n", c->ToString().c_str() );
+
          c->Add( b );
+         //printf( "c = %s\n", c->ToString().c_str() );
+         
+         //cpuAnswer -= j;
+         //printf( "%d\n", cpuAnswer );
 
          // op de andere manier
          d->AssignUnsigned( cpuAnswer );
@@ -52,11 +59,11 @@ void testcase_optellingen()
          // c->farray[0] == (bignumAnswer & 0x0000FFFF)
          // c->farray[1] == (bignumAnswer & 0xFFFF0000) >> 16
          if ( !c->Equals( d ) ) {
-            std::cout << "fout: " << a->ToString() << " + " << b->ToString() << " != " << c->ToString() << std::endl;
-            
+            std::cout << "fout: " << a->ToString() << " + " << b->ToString() << " != " << c->ToHexString() << std::endl;
+
             return;
          } else {
-            std::cout << "goed: " << a->ToString() << " + " << b->ToString() << " == " << c->ToString() << std::endl;
+            std::cout << "goed: " << a->ToString() << " + " << b->ToString() << " == " << c->ToHexString() << std::endl;
          }
       }
       
@@ -306,6 +313,19 @@ void mul2_test2()
    delete a;
 }
 
+bool isPrime( unsigned int i ) {
+   unsigned int i2 = i >> 1;
+   
+   for ( unsigned int j = 2; j < i2; j++ ) {
+      if ( i % j == 0 ) {
+         printf( "i % j != 0\n", i, j );
+         return false;
+      }
+   }
+   
+   return true;
+}
+
 int main(int argc, char *argv[])
 {
    TBigNumber *number = new TBigNumber( 0x1234ABCD );
@@ -408,15 +428,15 @@ int main(int argc, char *argv[])
 
 
 
-   testcase_optellingen();
+   //testcase_optellingen();
    
-   system("pause");
-   return 1;
+   //system("pause");
+   //return 1;
 
 
    unsigned int iSize;
    TPrimeDB *db = new TPrimeDB();
-   
+
    db->LoadFromASCIIFile( "primes.txt" );
 
    printf( "db read from file\n" );
@@ -439,10 +459,15 @@ int main(int argc, char *argv[])
 
    for ( unsigned int i = 0; i < 0x7FFFFFFF; i++ ) {
       db->AddFollowupPrime();
-      iSize = db->Size() - 1;
+      iSize = db->size() - 1;
       
       std::string x = db->GetNumber( iSize )->ToHexString();
-      printf( "%s\n", x.c_str() );
+      std::string d = db->GetNumber( iSize )->ToString();
+      printf( "%s\n", d.c_str() );
+      if ( !isPrime( atoi(d.c_str()) ) ) {
+         printf( "Not a prime!\n" );
+         return 1;
+      }
       fprintf( fp, "%s\n", x.c_str() );
       
       fflush( fp );

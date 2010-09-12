@@ -175,7 +175,7 @@ void TBigNumber::AssignValue( const TBigNumber *aNumber ) {
    }
 }
 
-
+// deze functie werkt niet met negatieve getallen
 void TBigNumber::Add( const TBigNumber *aNumber ) {
    unsigned int iLen = quickmax( this->iCountArrayI, aNumber->iCountArrayI ) + 1;
 
@@ -185,12 +185,12 @@ void TBigNumber::Add( const TBigNumber *aNumber ) {
       this->ResizeArrayI( iLen, false );
    }
 
-   unsigned short int remA;
+   unsigned int remA;
    unsigned int resA;
    unsigned int ref;
    unsigned char add = 0;
    unsigned int resB = 0;
-
+   
    unsigned int i;
    for ( i = 0; i < iLen; i++ ) {
       if ( i < aNumber->iCountArrayI ) {
@@ -200,12 +200,13 @@ void TBigNumber::Add( const TBigNumber *aNumber ) {
       }
 
       resA = this->FArrayI[i];
-      
+
       ref = resA;
       resA += remA;
       if ( resA < ref ) {     // langzame overflow detectie
          add++;
       }
+      
       
       ref = resA;
       resA += resB;
@@ -225,8 +226,8 @@ void TBigNumber::Subtract( const TBigNumber *aNumber ) {
    unsigned int iLen = quickmax( this->iCountArrayI, aNumber->iCountArrayI );
    this->ResizeArrayI( iLen, false );
 
-   unsigned short int remA;
-   unsigned short int remB = 0;
+   unsigned int remA;
+   unsigned int remB = 0;
    unsigned int resA;
    unsigned int resB;
    unsigned int remC = 0;
@@ -275,54 +276,52 @@ void TBigNumber::Subtract( const TBigNumber *aNumber ) {
          resA = this->FArrayI[i];
       }
 
-      resB = remA + remC;
-      resA = resA - resB;
+      resA = resA - remC;
+      remC = 0;
 
-      remA = static_cast<unsigned short int>(resA & 0x0000FFFF);
-      remB = static_cast<unsigned short int>((resA & 0xFFFF0000) >> 16);
-      
-      if (remB != 0) {
-         remC = remB + 2;
+      if ( resA >= remA ) {
+         resA = resA - remA;
       } else {
-         remC = 0;
+         resA = abs(resA - remA);
+         remC = 1;
       }
       
-      this->FArrayI[i] = remA;
+      this->FArrayI[i] = resA;
+   }
+   
+   if ( !FNegative && (remC != 0) ) {
+      FNegative = true;
+   } else {
+      FNegative = false;
+      
+      // ???
    }
    
    this->CompressArrayI();
 }
 
 void TBigNumber::Add( int iNumber ) {
-   TBigNumber *tmp = new TBigNumber( iNumber );
-
-   this->Add( tmp );
-
-   delete tmp;
+   TBigNumber tmp( iNumber );
+   
+   this->Add( &tmp );
 }
 
 void TBigNumber::Subtract( int iNumber ) {
-   TBigNumber *tmp = new TBigNumber( iNumber );
+   TBigNumber tmp( iNumber );
 
-   this->Subtract( tmp );
-
-   delete tmp;
+   this->Subtract( &tmp );
 }
 
 void TBigNumber::Multiply( int iNumber ) {
-   TBigNumber *tmp = new TBigNumber( iNumber );
+   TBigNumber tmp( iNumber );
    
-   this->Multiply( tmp );
-   
-   delete tmp;
+   this->Multiply( &tmp );
 }
 
 void TBigNumber::Mod( int iNumber ) {
-   TBigNumber *tmpRegister = new TBigNumber( iNumber );
+   TBigNumber tmp( iNumber );
 
-   this->Mod( tmpRegister );
-   
-   delete tmpRegister;
+   this->Mod( &tmp );
 }
 
 
@@ -548,7 +547,7 @@ void TBigNumber::Mul2() {
    }
 }
 
-std::string TBigNumber::ToString() {
+std::string TBigNumber::ToString() const {
    std::string sRes = "";
    char tmp[1024];
    
@@ -602,22 +601,35 @@ unsigned char getHexVal( unsigned char c ) {
 
 // eigenlijk kan dit niet, de string kan langer zijn dan een unsigned int
 void TBigNumber::LoadFromString( const char *s ) {
-   unsigned short c1,c2,c3,c4 = 0;
+   unsigned short c1,c2,c3,c4,c5,c6,c7,c8 = 0;
    unsigned int i = 0;
    unsigned int j = 0;
    unsigned int count = strlen(s);
+   while ( (s[count-1] == 13) || (s[count-1] == 10) ) {
+      count--;
+   }
 
-   count = count >> 2;
+   count = count / 8;
    
    ResizeArrayI( count, false );
 
    for ( i = 0; i < count; i++ ) {
-      j = i << 2;
-      c4 = getHexVal( s[j + 0] );
-      c3 = getHexVal( s[j + 1] );
-      c2 = getHexVal( s[j + 2] );
-      c1 = getHexVal( s[j + 3] );
+      j = i << 4;
 
+      c8 = getHexVal( s[j + 0] );
+      c7 = getHexVal( s[j + 1] );
+      c6 = getHexVal( s[j + 2] );
+      c5 = getHexVal( s[j + 3] );
+      c4 = getHexVal( s[j + 4] );
+      c3 = getHexVal( s[j + 5] );
+      c2 = getHexVal( s[j + 6] );
+      c1 = getHexVal( s[j + 7] );
+
+      FArrayI[i] = 0;
+      FArrayI[i] = FArrayI[i] | (c8 << 28);
+      FArrayI[i] = FArrayI[i] | (c7 << 24);
+      FArrayI[i] = FArrayI[i] | (c6 << 20);
+      FArrayI[i] = FArrayI[i] | (c5 << 16);
       FArrayI[i] = FArrayI[i] | (c4 << 12);
       FArrayI[i] = FArrayI[i] | (c3 << 8);
       FArrayI[i] = FArrayI[i] | (c2 << 4);

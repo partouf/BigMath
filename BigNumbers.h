@@ -4,7 +4,7 @@
 
 
 #include <string>
-#include <Atoms/GFFreeable.h>
+#include <Groundfloor/Atoms/GFFreeable.h>
 
 // Array van bytes zijn Words (unsigned shorts),
 //  aangezien 16bits * 16bits maximaal in 32bits resulteerd,
@@ -60,7 +60,7 @@ public:
    void Dec();
    
    bool IsOdd();
-   std::string ToString();
+   std::string ToString() const;
    std::string ToHexString();
    
    void LoadFromString( const char *s );

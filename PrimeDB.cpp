@@ -18,17 +18,16 @@ void TPrimeDB::BuildBase()
    //this->AddElement( obj );
    
    obj = new TBigNumber( 3 );
-   this->AddElement( obj );
+   this->addElement( obj );
 }
 
 TBigNumber *TPrimeDB::GetNumber( unsigned int iIndex )
 {
    TBigNumber *obj = NULL;
    
-   if ( iIndex < this->Size() ) {
+   if ( iIndex < this->size() ) {
 
-      obj = static_cast<TBigNumber *>( this->ElementAt( iIndex ) );
-
+      obj = static_cast<TBigNumber *>( this->elementAt( iIndex ) );
    }
 
    return obj;
@@ -36,14 +35,12 @@ TBigNumber *TPrimeDB::GetNumber( unsigned int iIndex )
 
 void TPrimeDB::AddFollowupPrime()
 {
-   unsigned int iSize = this->Size();
-   
+   unsigned int iSize = this->size();
    if ( iSize == 0 ) {
       this->BuildBase();
       
-      iSize = this->Size();
+      iSize = this->size();
    }
-   
    
    // dit algorithme is op basis van de,
    //  aanname dat een oneven getal
@@ -79,7 +76,7 @@ void TPrimeDB::AddFollowupPrime()
 //   delete two;
    
    // uiteindelijk hebben we een nieuwe priem
-   this->AddElement( copy );
+   this->addElement( copy );
 }
 
 bool TPrimeDB::ContainsDivider( const TBigNumber *subject )
@@ -92,7 +89,7 @@ bool TPrimeDB::ContainsDivider( const TBigNumber *subject )
    
    bool bRet = false;
    
-   unsigned int c = this->Size() - 1;
+   unsigned int c = this->size() - 1;
    for ( unsigned int i = c; i >= 0; i-- ) {
       div = this->GetNumber( i );
 
@@ -129,15 +126,16 @@ void TPrimeDB::LoadFromASCIIFile( const char *sFile ) {
    FILE *fp;
 
    fp = fopen( sFile, "r" );
-   
-   while ( !feof( fp ) ) {
-      fgets( sLine, 1024, fp );
+   if ( fp != NULL ) {
+      while ( !feof( fp ) ) {
+         fgets( sLine, 1024, fp );
       
-      if ( strlen( sLine ) != 0 ) {
-         aNum = new TBigNumber();
-         this->AddElement( aNum );
+         if ( strlen( sLine ) != 0 ) {
+            aNum = new TBigNumber();
+            this->addElement( aNum );
          
-         aNum->LoadFromString( sLine );
+            aNum->LoadFromString( sLine );
+         }
       }
    }
    
